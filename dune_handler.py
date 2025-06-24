@@ -9,6 +9,9 @@ from mindsdb.integrations.libs.response import (
 from mindsdb.utilities import log
 from mindsdb_sql_parser import parse_sql
 from .dune_tables import (
+    BalancesTable,
+    TransactionsTable,
+    CollectiblesTable,
     QueriesTable,
     ExecutionsTable,
     ResultsTable,
@@ -40,7 +43,7 @@ class DuneHandler(APIHandler):
         # Connection parameters
         connection_data = kwargs.get('connection_data', {})
         self.api_key = connection_data.get('api_key')
-        self.base_url = connection_data.get('base_url', 'https://api.dune.com/api/v1')
+        self.base_url = connection_data.get('base_url', 'https://api.sim.dune.com/v1')
         
         # API configuration
         self.headers = {
@@ -50,9 +53,12 @@ class DuneHandler(APIHandler):
         }
         
         if self.api_key:
-            self.headers['X-Dune-API-Key'] = self.api_key
+            self.headers['X-Sim-Api-Key'] = self.api_key
         
         # Register available tables
+        self._register_table('balances', BalancesTable(self))
+        self._register_table('transactions', TransactionsTable(self))
+        self._register_table('collectibles', CollectiblesTable(self))
         self._register_table('queries', QueriesTable(self))
         self._register_table('executions', ExecutionsTable(self))
         self._register_table('results', ResultsTable(self))
@@ -68,15 +74,39 @@ class DuneHandler(APIHandler):
             HandlerStatusResponse
         """
         try:
-            # Test connection by trying to access a simple endpoint
-            # We'll use the contracts endpoint as it's publicly available
-            response = self.call_dune_api('/contracts/trending')
-            if response and isinstance(response, (list, dict)):
-                self.is_connected = True
-                return StatusResponse(True)
-            else:
+            # Simple connection test - just check if we have a valid API key
+            if not self.api_key:
                 self.is_connected = False
-                return StatusResponse(False, "Connection failed: Invalid response from Dune Analytics API")
+                return StatusResponse(False, "Connection failed: API key is required")
+            
+            # Test connectivity with a simple HTTP request to validate API key
+            # Use a lightweight request that tests auth without needing specific data
+            test_url = self.base_url + '/user'  # User info endpoint should exist and validate API key
+            
+            response = requests.get(test_url, headers=self.headers, timeout=10)
+            
+            if response.status_code in [401, 403]:
+                self.is_connected = False
+                return StatusResponse(False, "Connection failed: Invalid API key")
+            elif response.status_code == 404:
+                # 404 means endpoint doesn't exist but API key is valid - connection works
+                self.is_connected = True
+                return StatusResponse(True, "Connection established (API key valid)")
+            elif response.status_code == 200:
+                # Perfect - endpoint exists and API key is valid
+                self.is_connected = True
+                return StatusResponse(True, "Connection established successfully")
+            else:
+                # Other status codes indicate potential issues
+                self.is_connected = False
+                return StatusResponse(False, f"Connection test returned status {response.status_code}")
+                
+        except requests.exceptions.Timeout:
+            self.is_connected = False
+            return StatusResponse(False, "Connection failed: Request timeout")
+        except requests.exceptions.ConnectionError:
+            self.is_connected = False  
+            return StatusResponse(False, "Connection failed: Cannot connect to Dune Analytics API")
         except Exception as e:
             self.is_connected = False
             logger.error(f"Error connecting to Dune Analytics: {e}")
