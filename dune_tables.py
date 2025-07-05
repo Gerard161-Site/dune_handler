@@ -11,7 +11,8 @@ class BalancesTable(APITable):
     
     def get_columns(self) -> List[str]:
         return [
-            'address', 'amount', 'chain', 'decimals', 'price_usd', 'symbol', 'value_usd', 'wallet_address'
+            'chain', 'chain_id', 'address', 'amount', 'symbol', 'name', 'decimals', 
+            'price_usd', 'value_usd', 'pool_size', 'low_liquidity', 'wallet_address'
         ]
     
     def select(self, query) -> pd.DataFrame:
@@ -36,13 +37,17 @@ class BalancesTable(APITable):
             rows = []
             for balance in response['balances']:
                 rows.append([
+                    balance.get('chain'),
+                    balance.get('chain_id'),
                     balance.get('address'),
                     balance.get('amount'),
-                    balance.get('chain'),
+                    balance.get('symbol'),
+                    balance.get('name'),
                     balance.get('decimals'),
                     balance.get('price_usd'),
-                    balance.get('symbol'),
                     balance.get('value_usd'),
+                    balance.get('pool_size'),
+                    balance.get('low_liquidity'),
                     response.get('wallet_address')
                 ])
             return pd.DataFrame(rows, columns=self.get_columns())
@@ -55,7 +60,9 @@ class TransactionsTable(APITable):
     
     def get_columns(self) -> List[str]:
         return [
-            'block_number', 'hash', 'from_address', 'to_address', 'value', 'gas_used', 'timestamp', 'chain'
+            'chain', 'chain_id', 'address', 'block_time', 'block_number', 'index', 'hash', 
+            'block_hash', 'value', 'transaction_type', 'from', 'to', 'nonce', 'gas_price', 
+            'gas_used', 'effective_gas_price', 'success', 'data'
         ]
     
     def select(self, query) -> pd.DataFrame:
@@ -80,14 +87,24 @@ class TransactionsTable(APITable):
             rows = []
             for tx in response['transactions']:
                 rows.append([
+                    tx.get('chain'),
+                    tx.get('chain_id'),
+                    tx.get('address'),
+                    tx.get('block_time'),
                     tx.get('block_number'),
+                    tx.get('index'),
                     tx.get('hash'),
-                    tx.get('from_address'),
-                    tx.get('to_address'),
+                    tx.get('block_hash'),
                     tx.get('value'),
+                    tx.get('transaction_type'),
+                    tx.get('from'),
+                    tx.get('to'),
+                    tx.get('nonce'),
+                    tx.get('gas_price'),
                     tx.get('gas_used'),
-                    tx.get('timestamp'),
-                    tx.get('chain')
+                    tx.get('effective_gas_price'),
+                    tx.get('success'),
+                    tx.get('data')
                 ])
             return pd.DataFrame(rows, columns=self.get_columns())
         
@@ -99,7 +116,8 @@ class CollectiblesTable(APITable):
     
     def get_columns(self) -> List[str]:
         return [
-            'contract_address', 'token_id', 'name', 'description', 'image_url', 'chain', 'collection_name'
+            'contract_address', 'token_standard', 'token_id', 'chain', 'chain_id', 'name', 
+            'symbol', 'metadata', 'balance', 'last_acquired', 'wallet_address'
         ]
     
     def select(self, query) -> pd.DataFrame:
@@ -120,17 +138,21 @@ class CollectiblesTable(APITable):
         endpoint = f'/evm/collectibles/{wallet_address}'
         response = self.handler.call_dune_api(endpoint)
         
-        if response and 'collectibles' in response:
+        if response and 'entries' in response:
             rows = []
-            for nft in response['collectibles']:
+            for nft in response['entries']:
                 rows.append([
                     nft.get('contract_address'),
+                    nft.get('token_standard'),
                     nft.get('token_id'),
-                    nft.get('name'),
-                    nft.get('description'),
-                    nft.get('image_url'),
                     nft.get('chain'),
-                    nft.get('collection_name')
+                    nft.get('chain_id'),
+                    nft.get('name'),
+                    nft.get('symbol'),
+                    str(nft.get('metadata')) if nft.get('metadata') else None,
+                    nft.get('balance'),
+                    nft.get('last_acquired'),
+                    response.get('address')
                 ])
             return pd.DataFrame(rows, columns=self.get_columns())
         

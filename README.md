@@ -1,10 +1,27 @@
-# Dune Analytics Handler
+# Sim by Dune Handler
 
-The Dune Analytics handler for MindsDB provides seamless integration with the Dune Analytics API, enabling you to access blockchain analytics data through SQL queries and execute custom Dune queries directly from your MindsDB instance.
+<div align="center">
+  <img src="icon.svg" alt="Sim by Dune" width="64" height="64">
+  <h3>Sim by Dune Handler for MindsDB</h3>
+  <p>Access real-time EVM wallet data including balances, transactions, and NFTs</p>
+  
+  ![Version](https://img.shields.io/badge/version-0.1.0-blue)
+  ![Type](https://img.shields.io/badge/type-Data%20Handler-green)
+  ![Status](https://img.shields.io/badge/status-Active-brightgreen)
+  ![Authentication](https://img.shields.io/badge/auth-API%20Key-orange)
+</div>
+
+---
+
+The Sim by Dune handler for MindsDB provides seamless integration with the Sim by Dune API, enabling you to access real-time EVM wallet analytics including token balances, transaction history, and NFT collections directly from your MindsDB instance.
 
 ## Implementation
 
-This handler is implemented using the Dune Analytics API and provides access to blockchain analytics data through SQL queries.
+This handler is implemented using the Sim by Dune API and provides access to real-time blockchain wallet data through SQL queries.
+
+## Sim by Dune API
+
+Sim by Dune is a powerful platform that provides real-time access to EVM wallet data across multiple blockchain networks. It offers comprehensive analytics for token balances, transaction history, and NFT collections with sub-second latency.
 
 ## Dune Analytics API
 
@@ -15,7 +32,7 @@ Dune Analytics is a powerful platform that allows users to query blockchain data
 ### Parameters
 
 * `api_key`: Your Dune Analytics API key (required)
-* `base_url`: Dune Analytics API base URL (default: `https://api.dune.com/api/v1`)
+* `base_url`: Dune Analytics API base URL (default: `https://api.sim.dune.com/v1/`)
 
 ### Example Connection
 
@@ -23,8 +40,8 @@ Dune Analytics is a powerful platform that allows users to query blockchain data
 CREATE DATABASE dune_datasource
 WITH ENGINE = "dune",
 PARAMETERS = {
-    "api_key": "your_dune_api_key_here",
-    "base_url": "https://api.dune.com/api/v1"  
+    "api_key": "sim_glShPybHoyOSWGMDsNCvQtfkfh3AX4FF",
+    "base_url": "https://api.sim.dune.com/v1/"  
 };
 ```
 

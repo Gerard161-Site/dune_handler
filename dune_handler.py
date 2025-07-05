@@ -79,21 +79,18 @@ class DuneHandler(APIHandler):
                 self.is_connected = False
                 return StatusResponse(False, "Connection failed: API key is required")
             
-            # Test connectivity with a simple HTTP request to validate API key
-            # Use a lightweight request that tests auth without needing specific data
-            test_url = self.base_url + '/user'  # User info endpoint should exist and validate API key
+            # FIXED: Test connectivity with a known working endpoint
+            # Use a test address to validate API key without needing real data
+            test_address = "0x0000000000000000000000000000000000000000"  # Test with zero address
+            test_url = f"{self.base_url}/evm/balances/{test_address}"
             
             response = requests.get(test_url, headers=self.headers, timeout=10)
             
             if response.status_code in [401, 403]:
                 self.is_connected = False
                 return StatusResponse(False, "Connection failed: Invalid API key")
-            elif response.status_code == 404:
-                # 404 means endpoint doesn't exist but API key is valid - connection works
-                self.is_connected = True
-                return StatusResponse(True, "Connection established (API key valid)")
-            elif response.status_code == 200:
-                # Perfect - endpoint exists and API key is valid
+            elif response.status_code in [200, 404]:
+                # 200 or 404 means API key is valid (404 is fine for test address)
                 self.is_connected = True
                 return StatusResponse(True, "Connection established successfully")
             else:
@@ -106,10 +103,10 @@ class DuneHandler(APIHandler):
             return StatusResponse(False, "Connection failed: Request timeout")
         except requests.exceptions.ConnectionError:
             self.is_connected = False  
-            return StatusResponse(False, "Connection failed: Cannot connect to Dune Analytics API")
+            return StatusResponse(False, "Connection failed: Cannot connect to Sim by Dune API")
         except Exception as e:
             self.is_connected = False
-            logger.error(f"Error connecting to Dune Analytics: {e}")
+            logger.error(f"Error connecting to Sim by Dune: {e}")
             return StatusResponse(False, f"Connection failed: {str(e)}")
     
     def check_connection(self) -> StatusResponse:
